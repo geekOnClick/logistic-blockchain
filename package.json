@@ -1,0 +1,11 @@
+{
+  "name": "blockchain-logistic",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.19"
+  },
+  "dependencies": {
+    "blockchain-logistic": "file:",
+    "hardhat-project": "file:"
+  }
+}
