@@ -6,7 +6,7 @@ import { Logistic__factory } from "@/typechain";
 import { ConnectWallet } from "./components/ConnectWallet";
 import { WaitinfForTransactionMessage } from "./components/WaitingForTransactionMessage";
 import { TransactionErrorMessage } from "./components/TransactionErrorMessage";
-import { CurrentConnectionProps, OrderProps } from "./types";
+import { CurrentConnectionProps, OrderProps, TxsToOwner } from "./types";
 import { OrdersTable } from "./components/ui/OrdersTable";
 import { BigNumberish } from "ethers";
 import { DeliveryOperatorForm } from "./components/ui/forms/DeliveryOperatorForm";
@@ -14,10 +14,11 @@ import { BayerForm } from "./components/ui/forms/BayerForm";
 import { ControllerForm } from "./components/ui/forms/ControllerForm";
 import { AcceptanceOperatorForm } from "./components/ui/forms/AcceptanceOperatorForm";
 import { BayerRefundForm } from "./components/ui/forms/BayerRefundForm";
+import { SellerTable } from "./components/ui/SellerTable";
 
 declare let window: any;
 // НЕ ЗАБЫТЬ МЕНЯТЬ АДРЕС КОНТРАКТА
-const CONTRACT_ADDRESS = '0xb7f8bc63bbcad18155201308c8f3540b07f84f5e';
+const CONTRACT_ADDRESS = '0x0dcd1bf9a1b36ce34237eeafef220932846bcd82';
 const HARDHAT_NETWORK_ID = '0x539';
 
 // const MUSIC_SHOP_ADDRESS = process.env.MUSIC_SHOP_ADDRESS;
@@ -29,6 +30,7 @@ export default function Home() {
     const [networkError, setNetworkError] = useState<string | undefined>();
     const [txBeingSent, setTxBeingSent] = useState<string | undefined>();
     const [transactionError, setTransactionError] = useState<any>();
+    const [txsBeingSentToOwner, setTxsBeingSentToOwner] = useState<TxsToOwner[]>([]);
     
     const [currentBalance, setCurrentBalance] = useState<string|undefined>();
     const [orders, setOrders] = useState<OrderProps[]>([]);
@@ -64,7 +66,7 @@ export default function Home() {
         })()
     }, [currentConnection, txBeingSent])
 
-    // отображение заказов
+    // отображение заказов и сохранение выполненных заказов
     useEffect(() => {
         ( async () => {
             if(currentConnection?.contract && currentConnection?.signer) {
@@ -81,6 +83,15 @@ export default function Home() {
                         }
                        })
                    setOrders(() => [...newOrders]);
+
+                   const acceptedOrders = (await currentConnection?.contract?.allAcceptedOrders()).map((order) => {
+                    return {
+                        hash: order.hash,
+                        timestamp: order.timestamp,
+                        value: order.value
+                    }
+                   })
+                   setTxsBeingSentToOwner(() => [...acceptedOrders]);
                 
 
                setRole(await currentConnection?.contract?.getRoleByAdress(await currentConnection?.signer?.getAddress()));
@@ -218,25 +229,14 @@ export default function Home() {
             />
         )}
 
-        {currentConnection?.signer && (
-            <p>Your address: {currentConnection.signer.address}</p>
-        )}
-
-        {txBeingSent && <WaitinfForTransactionMessage txHash={txBeingSent} />}
-
-        {transactionError && (
-            <TransactionErrorMessage 
-                message={_getRpcErrorMessage(transactionError)}
-                dismiss={_dismissTransactionError}
-            />
-        )}
-
         {currentBalance && (
-            <>
-            <p>Your Balance: {ethers.formatEther(currentBalance)} ETH</p>
-            <p>Your Role: {role} </p>
-            </>
+            <div className="bg-gray-500 px-4 py-4 flex gap-4 flex-col">
+                {currentConnection?.signer && <p>Your address: {currentConnection.signer.address}</p>}
+                <p>Your Balance: {ethers.formatEther(currentBalance)} ETH</p>
+                <p>Your Role: {role} </p>
+            </div>
         )}
+
         {role === 'deliveryOperator' && currentConnection && (
             <DeliveryOperatorForm
                 currentConnection={currentConnection}
@@ -247,18 +247,18 @@ export default function Home() {
         )}
         {role === 'Bayer' && currentConnection && (
             <>
-            <BayerForm 
+                <BayerForm 
+                    currentConnection={currentConnection}
+                    orders={orders}
+                    setTransactionError={setTransactionError}
+                    setTxBeingSent={setTxBeingSent}
+                />
+                <BayerRefundForm 
                 currentConnection={currentConnection}
                 orders={orders}
                 setTransactionError={setTransactionError}
                 setTxBeingSent={setTxBeingSent}
-            />
-            <BayerRefundForm 
-            currentConnection={currentConnection}
-            orders={orders}
-            setTransactionError={setTransactionError}
-            setTxBeingSent={setTxBeingSent}
-            />
+                />
             </>
         )}
         {role === 'controller' && typeof controlledOrderId === 'bigint' && currentConnection && (
@@ -279,16 +279,32 @@ export default function Home() {
                 setTxBeingSent={setTxBeingSent}
                 orderId={acceptanceOrderId as BigNumberish}
                 setAcceptanceOrderId={setAcceptanceOrderId}
+                setTxsBeingSentToOwner={setTxsBeingSentToOwner}
+            />
+        )}
+        {role === 'Seller' && (
+            <SellerTable 
+                txsBeingSentToOwner={txsBeingSentToOwner}
             />
         )}
         {currentConnection?.contract && (
-            <div>
-                {contractBalance && <p>Contract Balance: {contractBalance} ETH</p>}
-                <p className="mt-8">Orders:</p>
+            <div className="mt-4">
+                <div className="w-full h-[2px] bg-gray-500"></div>
+                {contractBalance && <p className="mt-4">Contract Balance: {contractBalance} ETH</p>}
+                <p className="mt-4">Orders:</p>
                 <OrdersTable orders={orders} role={role} handleOrder={handleOrder} />
             </div>
         )
         }
+
+        {txBeingSent && <WaitinfForTransactionMessage txHash={txBeingSent} />}
+
+        {transactionError && (
+            <TransactionErrorMessage 
+                message={_getRpcErrorMessage(transactionError)}
+                dismiss={_dismissTransactionError}
+            />
+        )}
       </main>
 
   );

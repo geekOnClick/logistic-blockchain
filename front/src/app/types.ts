@@ -17,3 +17,8 @@ export type CurrentConnectionProps = {
     contract: Logistic | undefined,
     signer: ethers.JsonRpcSigner | undefined,
 }
+export type TxsToOwner = {
+    hash: ethers.BigNumberish,
+    timestamp: ethers.BigNumberish,
+    value: ethers.BigNumberish
+}

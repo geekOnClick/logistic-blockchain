@@ -37,7 +37,14 @@ contract Logistic is ERC165 {
         string logisticStatus;
     }
 
+    struct AcceptedOrder {
+        uint256 timestamp;
+        uint256 hash;
+        uint256 value;
+    }
+
     Order[] public orders;
+    AcceptedOrder[] public acceptedOrders;
 
     uint256 public currentOrderIndex;
     uint256 public orderAt;
@@ -211,6 +218,30 @@ contract Logistic is ERC165 {
 
         for (uint256 i=0; i < totalOrders; ++i) {
             orderList[i] = orders[i];
+        }
+
+        return orderList;
+    }
+
+        /// Сохранение выполненного заказа
+    function addAcceptedOrder( uint256 _timestamp, uint256 _hash, uint256 _value) external onlyAcceptanceOperator {
+        acceptedOrders.push(
+            AcceptedOrder({
+                timestamp: _timestamp,
+                hash: _hash,
+                value: _value
+            })
+         );
+
+    }
+
+    /// функция для получения всех выполненных заказов на фронте
+    function allAcceptedOrders() external view returns (AcceptedOrder[] memory) {
+        uint totalOrders = acceptedOrders.length;
+        AcceptedOrder[] memory orderList = new AcceptedOrder[](totalOrders);
+
+        for (uint256 i=0; i < totalOrders; ++i) {
+            orderList[i] = acceptedOrders[i];
         }
 
         return orderList;

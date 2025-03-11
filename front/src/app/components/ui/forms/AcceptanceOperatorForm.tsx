@@ -1,4 +1,4 @@
-import { CurrentConnectionProps, OrderProps } from '@/app/types';
+import { CurrentConnectionProps, OrderProps, TxsToOwner } from '@/app/types';
 import { BigNumberish } from 'ethers';
 import React from 'react';
 
@@ -9,6 +9,7 @@ type ContolllerFormProps = {
     setAcceptanceOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>,
     orderId: BigNumberish;
     orders: OrderProps[];
+    setTxsBeingSentToOwner: React.Dispatch<React.SetStateAction<TxsToOwner[]>>
 };
 
 export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
@@ -17,7 +18,8 @@ export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
     currentConnection,
     setTransactionError,
     setAcceptanceOrderId,
-    setTxBeingSent
+    setTxBeingSent,
+    setTxsBeingSentToOwner
 }) => {
 
     const handleAcceptOrder = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -58,6 +60,15 @@ export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
             order.logisticStatus = 'Accepted';
             order.orderStatus = 'PaidOnSeller';
             setAcceptanceOrderId(undefined);
+
+            const txToOwner: TxsToOwner = {
+                hash: controlTx.hash,
+                timestamp: Math.floor(Date.now() / 1000),
+                value: order.resourcePrice
+            }
+            const acceptedOrderTx = await currentConnection.contract.addAcceptedOrder(txToOwner.timestamp, txToOwner.hash, txToOwner.value);
+            await acceptedOrderTx.wait();
+            setTxsBeingSentToOwner((txs) => [...txs, txToOwner]);
             //TODO: должен отдавать событие перевода денег
             // if(currentConnection.provider) {
             //     currentConnection.provider.on("OrderAccepted", () => {

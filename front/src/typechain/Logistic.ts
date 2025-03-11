@@ -24,6 +24,18 @@ import type {
 } from "./common";
 
 export declare namespace Logistic {
+  export type AcceptedOrderStruct = {
+    timestamp: BigNumberish;
+    hash: BigNumberish;
+    value: BigNumberish;
+  };
+
+  export type AcceptedOrderStructOutput = [
+    timestamp: bigint,
+    hash: bigint,
+    value: bigint
+  ] & { timestamp: bigint; hash: bigint; value: bigint };
+
   export type OrderStruct = {
     orderId: BigNumberish;
     resourceId: BigNumberish;
@@ -61,7 +73,10 @@ export interface LogisticInterface extends Interface {
     nameOrSignature:
       | "acceptOrder"
       | "acceptanceOperator"
+      | "acceptedOrders"
+      | "addAcceptedOrder"
       | "addOrder"
+      | "allAcceptedOrders"
       | "allOrders"
       | "bayer"
       | "buy"
@@ -101,8 +116,20 @@ export interface LogisticInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "acceptedOrders",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addAcceptedOrder",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "addOrder",
     values: [BigNumberish, string, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allAcceptedOrders",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "allOrders", values?: undefined): string;
   encodeFunctionData(functionFragment: "bayer", values?: undefined): string;
@@ -166,7 +193,19 @@ export interface LogisticInterface extends Interface {
     functionFragment: "acceptanceOperator",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptedOrders",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "addAcceptedOrder",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "addOrder", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "allAcceptedOrders",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "allOrders", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "bayer", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "buy", data: BytesLike): Result;
@@ -364,6 +403,24 @@ export interface Logistic extends BaseContract {
 
   acceptanceOperator: TypedContractMethod<[], [string], "view">;
 
+  acceptedOrders: TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [bigint, bigint, bigint] & {
+        timestamp: bigint;
+        hash: bigint;
+        value: bigint;
+      }
+    ],
+    "view"
+  >;
+
+  addAcceptedOrder: TypedContractMethod<
+    [_timestamp: BigNumberish, _hash: BigNumberish, _value: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   addOrder: TypedContractMethod<
     [
       _resourceId: BigNumberish,
@@ -373,6 +430,12 @@ export interface Logistic extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+
+  allAcceptedOrders: TypedContractMethod<
+    [],
+    [Logistic.AcceptedOrderStructOutput[]],
+    "view"
   >;
 
   allOrders: TypedContractMethod<[], [Logistic.OrderStructOutput[]], "view">;
@@ -455,6 +518,26 @@ export interface Logistic extends BaseContract {
     nameOrSignature: "acceptanceOperator"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "acceptedOrders"
+  ): TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [bigint, bigint, bigint] & {
+        timestamp: bigint;
+        hash: bigint;
+        value: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "addAcceptedOrder"
+  ): TypedContractMethod<
+    [_timestamp: BigNumberish, _hash: BigNumberish, _value: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "addOrder"
   ): TypedContractMethod<
     [
@@ -466,6 +549,9 @@ export interface Logistic extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "allAcceptedOrders"
+  ): TypedContractMethod<[], [Logistic.AcceptedOrderStructOutput[]], "view">;
   getFunction(
     nameOrSignature: "allOrders"
   ): TypedContractMethod<[], [Logistic.OrderStructOutput[]], "view">;
