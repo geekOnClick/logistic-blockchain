@@ -18,17 +18,16 @@ export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,se
         const orderId = BigInt(Number(formData.get("orderId")));
         const resourcePrice = BigInt(Number(formData.get("resourcePrice")));
 
-        if(!currentConnection?.contract) {
+        if(!currentConnection?.contract || typeof orderId !== 'bigint'|| !resourcePrice) {
            return;
         }
 
-        const order = orders.find(order => order.orderId === orderId);
-        if(!order) {
-            setTransactionError('Not correct order ID')
-            return;
-        };
-
         try {
+            const order = orders.find(order => order.orderId === orderId);
+            if(!order) {
+                throw new Error('Not correct order ID')
+            };
+
             const buyTx = await currentConnection.contract.buy(orderId, {value: resourcePrice});
             setTxBeingSent(buyTx.hash);
             await buyTx.wait();
@@ -36,9 +35,15 @@ export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,se
             order.logisticStatus = 'Transit';
             order.orderStatus = 'PaidOnContract';
 
-        } catch(error) {
-            console.error(error);
-            setTransactionError(error as string);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch(error: any) {
+            if(error?.reason) {
+                console.warn(error.reason);
+                setTransactionError(error.reason as string);
+            } else {
+                console.warn(error);
+                setTransactionError(error as string);
+            }
         }finally {
             setTxBeingSent(undefined);
         }
@@ -52,7 +57,7 @@ export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,se
               <input
                 name="orderId"
                 type="text"
-                placeholder="Resource ID"
+                placeholder="Order ID"
                 className="w-full px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -62,7 +67,7 @@ export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,se
               <input
                 name="resourcePrice"
                 type="text"
-                placeholder="Resource Title"
+                placeholder="Amount"
                 className="w-full px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

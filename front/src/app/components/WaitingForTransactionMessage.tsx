@@ -6,8 +6,8 @@ type WaitingForTransactionMessageProps = {
 
 export const WaitinfForTransactionMessage: React.FC<WaitingForTransactionMessageProps> = ({ txHash }) => {
     return (
-        <div>
-            <p>Waiting for transaction ${txHash}...</p>
+        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg animate-slide-in">
+            <p className="text-sm font-medium">Waiting for transaction <span className="font-bold">{txHash}</span>...</p>
         </div>
-    )
+    );
 }

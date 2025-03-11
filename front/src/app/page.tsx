@@ -11,10 +11,13 @@ import { OrdersTable } from "./components/ui/OrdersTable";
 import { BigNumberish } from "ethers";
 import { DeliveryOperatorForm } from "./components/ui/forms/DeliveryOperatorForm";
 import { BayerForm } from "./components/ui/forms/BayerForm";
+import { ControllerForm } from "./components/ui/forms/ControllerForm";
+import { AcceptanceOperatorForm } from "./components/ui/forms/AcceptanceOperatorForm";
+import { BayerRefundForm } from "./components/ui/forms/BayerRefundForm";
 
 declare let window: any;
 // НЕ ЗАБЫТЬ МЕНЯТЬ АДРЕС КОНТРАКТА
-const CONTRACT_ADDRESS = '0x5fbdb2315678afecb367f032d93f642f64180aa3';
+const CONTRACT_ADDRESS = '0xb7f8bc63bbcad18155201308c8f3540b07f84f5e';
 const HARDHAT_NETWORK_ID = '0x539';
 
 // const MUSIC_SHOP_ADDRESS = process.env.MUSIC_SHOP_ADDRESS;
@@ -31,6 +34,8 @@ export default function Home() {
     const [orders, setOrders] = useState<OrderProps[]>([]);
     const [role, setRole] = useState<string>('');
     const [contractBalance, setContractBalance] = useState<BigNumberish | undefined>();
+    const [controlledOrderId, setControlledOrderId] = useState<BigNumberish | undefined>();
+    const [acceptanceOrderId, setAcceptanceOrderId] = useState<BigNumberish | undefined>();
 
     // корректное обновление баланса
     useEffect(() => {
@@ -154,6 +159,8 @@ export default function Home() {
         setCurrentBalance(undefined);
         setRole('');
         setTxBeingSent(undefined);
+        setControlledOrderId(undefined);
+        setAcceptanceOrderId(undefined);
     }
 
     const _checkNetwork = async (): Promise<boolean> => {
@@ -166,6 +173,40 @@ export default function Home() {
        return false;
     }
 
+    const handleOrder = async(orderId: BigNumberish) => {
+        if(!currentConnection?.contract) {
+            return;
+         }
+
+         const contract = currentConnection.contract;
+         try {
+            const addTx = role === 'controller' ? await contract.controll(
+                orderId
+            ) :
+            await contract.delivered(
+                orderId
+            )
+            setTxBeingSent(addTx.hash);
+            await addTx.wait();
+    
+            if(role === 'controller') {
+                setControlledOrderId(orderId)
+            } else {
+                console.log(1, orderId)
+                setAcceptanceOrderId(orderId);
+            }
+
+            const order = orders.find(order => order.orderId === orderId);
+            if(order){
+                order.logisticStatus = role === 'controller' ? 'Control' : 'Delivired';
+            }
+         } catch(error) {
+            console.error(error);
+            setTransactionError(error as string);
+        }finally {
+            setTxBeingSent(undefined);
+        }
+    }
 
   return (
       <main className="flex flex-col px-4 py-4 gap-8 row-start-2 items-center sm:items-start">
@@ -205,44 +246,49 @@ export default function Home() {
             />
         )}
         {role === 'Bayer' && currentConnection && (
+            <>
             <BayerForm 
                 currentConnection={currentConnection}
                 orders={orders}
                 setTransactionError={setTransactionError}
                 setTxBeingSent={setTxBeingSent}
             />
+            <BayerRefundForm 
+            currentConnection={currentConnection}
+            orders={orders}
+            setTransactionError={setTransactionError}
+            setTxBeingSent={setTxBeingSent}
+            />
+            </>
+        )}
+        {role === 'controller' && typeof controlledOrderId === 'bigint' && currentConnection && (
+            <ControllerForm 
+                currentConnection={currentConnection as CurrentConnectionProps}
+                orders={orders}
+                setTransactionError={setTransactionError}
+                setTxBeingSent={setTxBeingSent}
+                orderId={controlledOrderId as BigNumberish}
+                setControlledOrderId={setControlledOrderId}
+            />
+        )}
+        {role === 'acceptanceOperator' && typeof acceptanceOrderId === 'bigint'  && currentConnection && (
+            <AcceptanceOperatorForm 
+                currentConnection={currentConnection as CurrentConnectionProps}
+                orders={orders}
+                setTransactionError={setTransactionError}
+                setTxBeingSent={setTxBeingSent}
+                orderId={acceptanceOrderId as BigNumberish}
+                setAcceptanceOrderId={setAcceptanceOrderId}
+            />
         )}
         {currentConnection?.contract && (
             <div>
                 {contractBalance && <p>Contract Balance: {contractBalance} ETH</p>}
                 <p className="mt-8">Orders:</p>
-                <OrdersTable orders={orders} />
+                <OrdersTable orders={orders} role={role} handleOrder={handleOrder} />
             </div>
         )
         }
-        {/* <ul>
-            Albums:
-            {albums.map(album => 
-            <div key={album.uid}>
-                <li>Title: {album.title}</li>
-                <li>Price: {album.price}</li>
-                <li>Quantity: {album.quantity}</li>
-                {BigInt(album.quantity) > BigInt(0) && <button onClick={(e) => _handleBuyAlbum(album, e)}>Buy</button>}
-            </div>
-            )}
-        </ul> */}
-{/* 
-        {isOwner && !txBeingSent && (
-            <>
-            <h2>Add Album</h2>
-            <form onSubmit={_handleAddAlbum}>
-               <input name="title" placeholder="Title" />
-               <input name="price" placeholder="Price" /> 
-               <input name="quantity" placeholder="Quantity" /> 
-               <button type="submit">ADD</button>
-            </form>
-            </>
-        )} */}
       </main>
 
   );

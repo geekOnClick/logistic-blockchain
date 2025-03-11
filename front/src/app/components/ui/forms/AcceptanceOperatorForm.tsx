@@ -1,0 +1,125 @@
+import { CurrentConnectionProps, OrderProps } from '@/app/types';
+import { BigNumberish } from 'ethers';
+import React from 'react';
+
+type ContolllerFormProps = {
+    currentConnection: CurrentConnectionProps;
+    setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>;
+    setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>;
+    setAcceptanceOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>,
+    orderId: BigNumberish;
+    orders: OrderProps[];
+};
+
+export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
+    orderId,
+    orders,
+    currentConnection,
+    setTransactionError,
+    setAcceptanceOrderId,
+    setTxBeingSent
+}) => {
+
+    const handleAcceptOrder = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.currentTarget);
+
+        const resourceWeight = formData.get("resourceWeight")?.toString();
+        const noDamage = formData.get('cargoNotDamaged');
+
+        if (!currentConnection?.contract || !noDamage || !resourceWeight) {
+            return;
+        }
+
+        const order = orders.find((order) => order.orderId === orderId);
+        if (!order) {
+            setTransactionError('Not correct order ID');
+            return;
+        }
+
+        try {
+            const ordersOnBlockchain = await currentConnection.contract.allOrders();
+
+            const blockchainOrder = ordersOnBlockchain.find((order) => order.orderId === orderId);
+
+            if(!blockchainOrder) {
+                return;
+            }
+
+            if(blockchainOrder.resourceWeight !== BigInt(resourceWeight)) {
+                throw new Error('Resource weight is not correct');
+            }
+
+            const controlTx = await currentConnection.contract.acceptOrder(orderId);
+            setTxBeingSent(controlTx.hash);
+            await controlTx.wait();
+
+            order.logisticStatus = 'Accepted';
+            order.orderStatus = 'PaidOnSeller';
+            setAcceptanceOrderId(undefined);
+            //TODO: должен отдавать событие перевода денег
+            // if(currentConnection.provider) {
+            //     currentConnection.provider.on("OrderAccepted", () => {
+            //         order.orderStatus = 'PaidOnSeller';
+            //         setAcceptanceOrderId(undefined);
+            //         console.log("Order accepted!");
+            //       });
+            // }
+
+           
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch(error: any) {
+            if(error?.reason) {
+                console.warn(error.reason);
+                setTransactionError(error.reason as string);
+            } else {
+                console.warn(error);
+                setTransactionError(error as string);
+            }
+        } finally {
+            setTxBeingSent(undefined);
+        }
+    };
+    return (
+        <div className='max-w-lg p-4 bg-gray-900 shadow-lg rounded-lg'>
+            <h2 className='text-xl font-bold text-white mb-4'>Accepting form</h2>
+            <form onSubmit={handleAcceptOrder} className='space-y-4'>
+                <div>
+                    <span className='text-gray-300 text-sm font-medium'>Order ID</span>
+                    <span className='pl-2 text-gray-300 text-sm font-medium'>{orderId}</span>
+                </div>
+
+                <div className='flex items-center space-x-2'>
+                    <label htmlFor='documentsCorrect' className='text-gray-300 text-sm font-medium'>
+                        The cargo is not damaged
+                    </label>
+                    <input
+                        id='cargoNotDamaged'
+                        name='cargoNotDamaged'
+                        type='checkbox'
+                        className='w-5 h-5 bg-gray-800 text-blue-500 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500'
+                    />
+                </div>
+
+                <div>
+                    <label className='block text-gray-300 text-sm font-medium'>
+                        Resource weight on acceptance
+                    </label>
+                    <input
+                        name='resourceWeight'
+                        type='text'
+                        placeholder='Resource Weight'
+                        className='w-full px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    />
+                </div>
+
+                <button
+                    type='submit'
+                    className='w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition'>
+                    Control passed
+                </button>
+            </form>
+        </div>
+    );
+};

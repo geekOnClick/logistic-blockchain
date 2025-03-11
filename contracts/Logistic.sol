@@ -8,19 +8,22 @@ contract Logistic is ERC165 {
     // 3. Добавить в структуру заказа адрес продавца (массив продавцов) куда выводить средства после поставки
     // 4. Добавить функции контролеру не пропускать товар, оператору приемки не принимать товар
     // 5. Хранение логов событий изменения в блокчейне
+    // 6. Добавить мультсайн (3 из 5 нод) для автоматического определения куда выводить деньги
 
     // Ether.js и солидити не умеют корректно передавать enum (передает bigint вместо строки, что не удобно). Поэтому используем строки
     // enum OrderStatus {
     //     PaidOnContract,
-    //     PaidOnBuyer,
-    //     Unpaid
+    //     PaidOnSeller,
+    //     Unpaid,
+    //     Refund
     // }
     // enum LogisticStatus {
     //     Created,
     //     Transit,
     //     Control,
     //     Delivered,
-    //     Accepted
+    //     Accepted,
+    //     Cancelled
     // }
 
     struct Order {
@@ -58,9 +61,14 @@ contract Logistic is ERC165 {
     event OrderControllPassed(uint256 indexed orderId, uint256 indexed timestamp);
     event OrderDelivered(uint256 indexed orderId, uint256 indexed timestamp);
     event OrderAccepted(uint256 indexed orderId, uint256 indexed timestamp);
+    event OrderCancelled(uint256 indexed orderId, uint256 indexed timestamp);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not an owner!");
+        _;
+    }
+    modifier onlyBayer() {
+        require(msg.sender == bayer, "not a bayer!");
         _;
     }
     modifier onlyController() {
@@ -146,20 +154,34 @@ contract Logistic is ERC165 {
 
         resourseToAccept.logisticStatus = 'Accepted';
 
-        emit OrderAccepted(_orderId, block.timestamp);
-
         withdraw(_orderId);
     }
     /// внутренний метод на вывод средств владельцу контракта
-    function withdraw(uint256 _orderId) public onlyOwner {
+    function withdraw(uint256 _orderId) internal {
         Order storage order = orders[_orderId];
         
         uint256 balance = address(this).balance;
         require(balance > 0, "Not enought money");
 
         payable(owner).transfer(balance);
+        emit OrderAccepted(_orderId, block.timestamp);
 
-        order.orderStatus = 'PaidOnBuyer';
+        order.orderStatus = 'PaidOnSeller';
+    }
+    /// внешний метод на вывод средств покупателю
+    function withdrawToBayer(uint256 _orderId) external onlyBayer {
+        Order storage order = orders[_orderId];
+        
+        uint256 balance = address(this).balance;
+        uint256 resourcePrice = order.resourcePrice;
+
+        require(balance >= resourcePrice, "Not enought money");
+
+        payable(bayer).transfer(resourcePrice);
+        emit OrderCancelled(_orderId, block.timestamp);
+
+        order.orderStatus = 'Refund';
+        order.logisticStatus = 'Cancelled';
     }
 
     /// функция возвращающая роль по адресу

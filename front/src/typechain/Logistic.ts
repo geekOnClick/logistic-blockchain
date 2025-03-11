@@ -78,12 +78,13 @@ export interface LogisticInterface extends Interface {
       | "orders"
       | "owner"
       | "supportsInterface"
-      | "withdraw"
+      | "withdrawToBayer"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
       | "OrderAccepted"
+      | "OrderCancelled"
       | "OrderControll"
       | "OrderControllPassed"
       | "OrderCreated"
@@ -153,7 +154,7 @@ export interface LogisticInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "withdraw",
+    functionFragment: "withdrawToBayer",
     values: [BigNumberish]
   ): string;
 
@@ -203,10 +204,26 @@ export interface LogisticInterface extends Interface {
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawToBayer",
+    data: BytesLike
+  ): Result;
 }
 
 export namespace OrderAcceptedEvent {
+  export type InputTuple = [orderId: BigNumberish, timestamp: BigNumberish];
+  export type OutputTuple = [orderId: bigint, timestamp: bigint];
+  export interface OutputObject {
+    orderId: bigint;
+    timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OrderCancelledEvent {
   export type InputTuple = [orderId: BigNumberish, timestamp: BigNumberish];
   export type OutputTuple = [orderId: bigint, timestamp: bigint];
   export interface OutputObject {
@@ -421,7 +438,11 @@ export interface Logistic extends BaseContract {
     "view"
   >;
 
-  withdraw: TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
+  withdrawToBayer: TypedContractMethod<
+    [_orderId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -509,7 +530,7 @@ export interface Logistic extends BaseContract {
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
-    nameOrSignature: "withdraw"
+    nameOrSignature: "withdrawToBayer"
   ): TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
 
   getEvent(
@@ -518,6 +539,13 @@ export interface Logistic extends BaseContract {
     OrderAcceptedEvent.InputTuple,
     OrderAcceptedEvent.OutputTuple,
     OrderAcceptedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OrderCancelled"
+  ): TypedContractEvent<
+    OrderCancelledEvent.InputTuple,
+    OrderCancelledEvent.OutputTuple,
+    OrderCancelledEvent.OutputObject
   >;
   getEvent(
     key: "OrderControll"
@@ -565,6 +593,17 @@ export interface Logistic extends BaseContract {
       OrderAcceptedEvent.InputTuple,
       OrderAcceptedEvent.OutputTuple,
       OrderAcceptedEvent.OutputObject
+    >;
+
+    "OrderCancelled(uint256,uint256)": TypedContractEvent<
+      OrderCancelledEvent.InputTuple,
+      OrderCancelledEvent.OutputTuple,
+      OrderCancelledEvent.OutputObject
+    >;
+    OrderCancelled: TypedContractEvent<
+      OrderCancelledEvent.InputTuple,
+      OrderCancelledEvent.OutputTuple,
+      OrderCancelledEvent.OutputObject
     >;
 
     "OrderControll(uint256,uint256)": TypedContractEvent<
