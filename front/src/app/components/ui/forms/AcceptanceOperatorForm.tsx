@@ -9,12 +9,14 @@ type ContolllerFormProps = {
     setAcceptanceOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>,
     orderId: BigNumberish;
     orders: OrderProps[];
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>,
     setTxsBeingSentToOwner: React.Dispatch<React.SetStateAction<TxsToOwner[]>>
 };
 
 export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
     orderId,
     orders,
+    setOrders,
     currentConnection,
     setTransactionError,
     setAcceptanceOrderId,
@@ -56,9 +58,17 @@ export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
             const controlTx = await currentConnection.contract.acceptOrder(orderId);
             setTxBeingSent(controlTx.hash);
             await controlTx.wait();
+            setOrders(prevOrders => prevOrders.map(prevOrder => {
+                if(order.orderId === prevOrder.orderId) {
+                    return {
+                        ...prevOrder,
+                        logisticStatus: 'Accepted',
+                        orderStatus: 'PaidOnSeller'
+                    }
+                }
+                return prevOrder;
+            }))
 
-            order.logisticStatus = 'Accepted';
-            order.orderStatus = 'PaidOnSeller';
             setAcceptanceOrderId(undefined);
 
             const txToOwner: TxsToOwner = {

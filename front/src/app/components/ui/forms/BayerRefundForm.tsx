@@ -6,9 +6,10 @@ type BayerRefundFormProps = {
     setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>,
     setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>,
     orders: OrderProps[],
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>
 }
 
-export const BayerRefundForm: React.FC<BayerRefundFormProps> = ({currentConnection,orders,setTxBeingSent,setTransactionError}) => {
+export const BayerRefundForm: React.FC<BayerRefundFormProps> = ({currentConnection,orders,setOrders, setTxBeingSent,setTransactionError}) => {
       
     const handleRefundOrder = async (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault();
@@ -30,9 +31,18 @@ export const BayerRefundForm: React.FC<BayerRefundFormProps> = ({currentConnecti
               const refundTx = await currentConnection.contract.withdrawToBayer(orderId);
               setTxBeingSent(refundTx.hash);
               await refundTx.wait();
-  
-              order.logisticStatus = 'Cancelled';
-              order.orderStatus = 'Refund';
+
+              setOrders(prevOrders => prevOrders.map(prevOrder => {
+                if(order.orderId === prevOrder.orderId) {
+                    return {
+                        ...prevOrder,
+                        logisticStatus: 'Cancelled',
+                        orderStatus: 'Refund'
+                    }
+                }
+                return prevOrder;
+            }))
+
   
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch(error: any) {

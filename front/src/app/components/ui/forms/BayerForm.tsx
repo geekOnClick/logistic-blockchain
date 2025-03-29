@@ -6,9 +6,10 @@ type BayerFormProps = {
     setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>,
     setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>,
     orders: OrderProps[],
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>,
 }
 
-export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,setTxBeingSent,setTransactionError}) => {
+export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,setOrders,setTxBeingSent,setTransactionError}) => {
 
     const handlePayOrder = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -31,9 +32,18 @@ export const BayerForm: React.FC<BayerFormProps> = ({currentConnection,orders,se
             const buyTx = await currentConnection.contract.buy(orderId, {value: resourcePrice});
             setTxBeingSent(buyTx.hash);
             await buyTx.wait();
-
-            order.logisticStatus = 'Transit';
-            order.orderStatus = 'PaidOnContract';
+            setOrders(prevOrders => prevOrders.map(prevOrder => {
+                if(order.orderId === prevOrder.orderId) {
+                    return {
+                        ...prevOrder,
+                        logisticStatus: 'Transit',
+                        orderStatus: 'PaidOnContract'
+                    }
+                }
+                return prevOrder;
+            }))
+            // order.logisticStatus = 'Transit';
+            // order.orderStatus = 'PaidOnContract';
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch(error: any) {

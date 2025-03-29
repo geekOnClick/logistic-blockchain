@@ -29,8 +29,8 @@ export const DeliveryOperatorForm: React.FC<DeliveryOperatorFormProps> = ({curre
             try {
                 const orderId = await contract.currentOrderIndex();
                 const orderedAt = Math.floor(Date.now() / 1000);
-                const orderStatus = 'Created';
-                const logisticStatus = 'Unpaid';
+                const orderStatus = 'Unpaid';
+                const logisticStatus = 'Created';
 
                 const addTx = await contract.addOrder(
                     BigInt(resourceId),

@@ -9,9 +9,10 @@ type ContolllerFormProps = {
     setControlledOrderId: React.Dispatch<React.SetStateAction<BigNumberish  | undefined>>,
     orderId: BigNumberish,
     orders: OrderProps[],
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>,
 };
 
-export const ControllerForm:React.FC<ContolllerFormProps> = ({orderId, orders, currentConnection, setControlledOrderId, setTransactionError, setTxBeingSent}) => {
+export const ControllerForm:React.FC<ContolllerFormProps> = ({orderId, orders, setOrders, currentConnection, setControlledOrderId, setTransactionError, setTxBeingSent}) => {
 
     const handleControlOrder = async(event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -36,7 +37,16 @@ export const ControllerForm:React.FC<ContolllerFormProps> = ({orderId, orders, c
             setTxBeingSent(controlTx.hash);
             await controlTx.wait();
 
-            order.logisticStatus = 'Transit';
+            setOrders(prevOrders => prevOrders.map(prevOrder => {
+                if(order.orderId === prevOrder.orderId) {
+                    return {
+                        ...prevOrder,
+                        logisticStatus: 'TransitAfterControll',
+                    }
+                }
+                return prevOrder;
+            }))
+
             setControlledOrderId(undefined);
 
         } catch(error) {

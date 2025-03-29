@@ -21,6 +21,7 @@ contract Logistic is ERC165 {
     //     Created,
     //     Transit,
     //     Control,
+    //     TransitAfterControll,
     //     Delivered,
     //     Accepted,
     //     Cancelled
@@ -144,7 +145,7 @@ contract Logistic is ERC165 {
     function controllSuccess(uint256 _orderId) external onlyController {
         Order storage resourseToControll = orders[_orderId];
 
-        resourseToControll.logisticStatus = 'Transit';
+        resourseToControll.logisticStatus = 'TransitAfterControll';
 
         emit OrderControllPassed(_orderId, block.timestamp);
     }
