@@ -31,6 +31,10 @@ export const DeliveryOperatorForm: React.FC<DeliveryOperatorFormProps> = ({curre
                 const orderedAt = Math.floor(Date.now() / 1000);
                 const orderStatus = 'Unpaid';
                 const logisticStatus = 'Created';
+                const isArbitrating = false;
+                const arbitratingBy = "";
+                const numberOfVotes = 0;
+                const arbitrationWinner = "";
 
                 const addTx = await contract.addOrder(
                     BigInt(resourceId),
@@ -49,7 +53,11 @@ export const DeliveryOperatorForm: React.FC<DeliveryOperatorFormProps> = ({curre
                     resourcePrice,
                     orderedAt,
                     orderStatus,
-                    logisticStatus
+                    logisticStatus,
+                    isArbitrating,
+                    arbitratingBy,
+                    numberOfVotes,
+                    arbitrationWinner
                 }]);
             }catch(error) {
                 console.error(error);

@@ -13,14 +13,15 @@ import { DeliveryOperatorForm } from './components/ui/forms/DeliveryOperatorForm
 import { BayerForm } from './components/ui/forms/BayerForm';
 import { ControllerForm } from './components/ui/forms/ControllerForm';
 import { AcceptanceOperatorForm } from './components/ui/forms/AcceptanceOperatorForm';
-import { BayerRefundForm } from './components/ui/forms/BayerRefundForm';
 import { SellerTable } from './components/ui/SellerTable';
 import { Select } from './components/ui/Select';
 import { OrderWay } from './components/ui/OrderWay';
+import { ArbitrationProcess } from './components/ArbitrationProcess';
+import { ApplyArbitrationForm } from './components/ui/forms/ApplyArbitrationForm';
 
 declare let window: any;
 // НЕ ЗАБЫТЬ МЕНЯТЬ АДРЕС КОНТРАКТА
-const CONTRACT_ADDRESS = '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
+const CONTRACT_ADDRESS = '0x959922be3caee4b8cd9a407cc3ac1c251c2007b1';
 const HARDHAT_NETWORK_ID = '0x539';
 
 // const MUSIC_SHOP_ADDRESS = process.env.MUSIC_SHOP_ADDRESS;
@@ -81,7 +82,11 @@ export default function Home() {
                         resourcePrice: order.resourcePrice,
                         orderedAt: order.orderedAt,
                         orderStatus: order.orderStatus,
-                        logisticStatus: order.logisticStatus
+                        logisticStatus: order.logisticStatus,
+                        isArbitrating: order.isArbitrating,
+                        arbitratingBy: order.arbitratingBy,
+                        numberOfVotes: order.numberOfVotes,
+                        arbitrationWinner: order.arbitrationWinner
                     };
                 });
                 setOrders(() => [...newOrders]);
@@ -89,7 +94,7 @@ export default function Home() {
                 const acceptedOrders = (await currentConnection?.contract?.allAcceptedOrders()).map(
                     (order) => {
                         return {
-                            hash: order.hash,
+                            orderId: order.orderId,
                             timestamp: order.timestamp,
                             value: order.value
                         };
@@ -102,6 +107,26 @@ export default function Home() {
                         await currentConnection?.signer?.getAddress()
                     )
                 );
+
+                const handler = (orderId: bigint, timestamp: bigint, value: bigint) => {
+                    const txToOwner: TxsToOwner = 
+                    {
+                        orderId: orderId.toString(),
+                        timestamp: timestamp.toString(),
+                        value: value.toString()
+                    };
+
+                    setTxsBeingSentToOwner((txs) => [...txs, txToOwner]);
+                };
+            
+                currentConnection?.contract.on(currentConnection?.contract.filters['MoneyPaidToSeller(uint256,uint256,uint256)'], handler);
+            
+                // очистка обработчика при размонтировании
+                return () => {
+                    if(currentConnection?.contract){
+                        currentConnection?.contract.off(currentConnection?.contract.filters['MoneyPaidToSeller(uint256,uint256,uint256)'], handler);
+                    }
+                };
             }
         })();
     }, [currentConnection]);
@@ -122,7 +147,6 @@ export default function Home() {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner(selectedAccount);
 
-        console.log('selectedAcc', selectedAccount);
         setCurrentConnection({
             ...currentConnection,
             provider,
@@ -192,7 +216,6 @@ export default function Home() {
         setNetworkError('Change network to Hardhat(localhost:8545)');
         return false;
     };
-
     const handleOrder = async (orderId: BigNumberish) => {
         if (!currentConnection?.contract) {
             return;
@@ -210,7 +233,6 @@ export default function Home() {
             if (role === 'controller') {
                 setControlledOrderId(orderId);
             } else {
-                console.log(1, orderId);
                 setAcceptanceOrderId(orderId);
             }
 
@@ -267,12 +289,13 @@ export default function Home() {
                             setTransactionError={setTransactionError}
                             setTxBeingSent={setTxBeingSent}
                         />
-                        <BayerRefundForm
+                        <ApplyArbitrationForm
                             currentConnection={currentConnection}
                             orders={orders}
                             setOrders={setOrders}
                             setTransactionError={setTransactionError}
                             setTxBeingSent={setTxBeingSent}
+                            role={role}
                         />
                     </>
                 )}
@@ -303,7 +326,19 @@ export default function Home() {
                             setTxsBeingSentToOwner={setTxsBeingSentToOwner}
                         />
                     )}
-                {role === 'Seller' && <SellerTable txsBeingSentToOwner={txsBeingSentToOwner} />}
+                {role === 'Seller' && currentConnection && (
+                    <>
+                        <SellerTable txsBeingSentToOwner={txsBeingSentToOwner} />
+                        <ApplyArbitrationForm
+                            currentConnection={currentConnection}
+                            orders={orders}
+                            setOrders={setOrders}
+                            setTransactionError={setTransactionError}
+                            setTxBeingSent={setTxBeingSent}
+                            role={role}
+                        />
+                    </>
+                )}
                 {currentConnection?.contract && (
                     <div className='mt-4'>
                         <div className='w-full h-[2px] bg-gray-500'></div>
@@ -327,6 +362,15 @@ export default function Home() {
             {currentBalance && (
                 <div className='p-4 bg-gray-900 shadow-lg rounded-lg flex gap-4 flex-col'>
                     <Select orders={orders} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} />
+                    {selectedOrder && <ArbitrationProcess 
+                            orders={orders}
+                            order={selectedOrder}
+                            role={role}
+                            currentConnection={currentConnection}
+                            setTxBeingSent={setTxBeingSent}
+                            setTransactionError={setTransactionError}
+                            setOrders={setOrders}
+                    /> }
                     {selectedOrder && <OrderWay order={selectedOrder} />}
                 </div>
             )}

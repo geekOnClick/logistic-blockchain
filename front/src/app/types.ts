@@ -11,6 +11,10 @@ export type OrderProps = {
     orderedAt: ethers.BigNumberish,
     orderStatus: string,
     logisticStatus: string
+    isArbitrating: boolean,
+    arbitratingBy: string,
+    numberOfVotes: ethers.BigNumberish,
+    arbitrationWinner: string
 }
 export type CurrentConnectionProps = {
     provider: BrowserProvider | undefined,
@@ -18,7 +22,7 @@ export type CurrentConnectionProps = {
     signer: ethers.JsonRpcSigner | undefined,
 }
 export type TxsToOwner = {
-    hash: ethers.BigNumberish,
+    orderId: ethers.BigNumberish,
     timestamp: ethers.BigNumberish,
     value: ethers.BigNumberish
 }

@@ -6,11 +6,11 @@ type ContolllerFormProps = {
     currentConnection: CurrentConnectionProps;
     setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>;
     setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>;
-    setAcceptanceOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>,
+    setAcceptanceOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>;
     orderId: BigNumberish;
     orders: OrderProps[];
-    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>,
-    setTxsBeingSentToOwner: React.Dispatch<React.SetStateAction<TxsToOwner[]>>
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>;
+    setTxsBeingSentToOwner: React.Dispatch<React.SetStateAction<TxsToOwner[]>>;
 };
 
 export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
@@ -21,77 +21,87 @@ export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
     setTransactionError,
     setAcceptanceOrderId,
     setTxBeingSent,
-    setTxsBeingSentToOwner
 }) => {
-
     const handleAcceptOrder = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const formData = new FormData(event.currentTarget);
-
-        const resourceWeight = formData.get("resourceWeight")?.toString();
-        const noDamage = formData.get('cargoNotDamaged');
-
-        if (!currentConnection?.contract || !noDamage || !resourceWeight) {
-            return;
-        }
-
-        const order = orders.find((order) => order.orderId === orderId);
-        if (!order) {
-            setTransactionError('Not correct order ID');
-            return;
-        }
-
         try {
-            const ordersOnBlockchain = await currentConnection.contract.allOrders();
+            const formData = new FormData(event.currentTarget);
 
-            const blockchainOrder = ordersOnBlockchain.find((order) => order.orderId === orderId);
+            const resourceWeight = formData.get('resourceWeight')?.toString();
+            const noDamage = formData.get('cargoNotDamaged');
 
-            if(!blockchainOrder) {
+            const order = orders.find((order) => order.orderId === orderId);
+            if (!order) {
+                setTransactionError('Not correct order ID');
+                return;
+            }
+            if (!currentConnection?.contract) {
                 return;
             }
 
-            if(blockchainOrder.resourceWeight !== BigInt(resourceWeight)) {
-                throw new Error('Resource weight is not correct');
-            }
+            if (!noDamage || !resourceWeight) {
+                // Проверка отклонила ордер
+                const controlTx = await currentConnection.contract.controllFailed(orderId);
+                setTxBeingSent(controlTx.hash);
+                await controlTx.wait();
 
-            const controlTx = await currentConnection.contract.acceptOrder(orderId);
-            setTxBeingSent(controlTx.hash);
-            await controlTx.wait();
-            setOrders(prevOrders => prevOrders.map(prevOrder => {
-                if(order.orderId === prevOrder.orderId) {
-                    return {
-                        ...prevOrder,
-                        logisticStatus: 'Accepted',
-                        orderStatus: 'PaidOnSeller'
-                    }
-                }
-                return prevOrder;
-            }))
+                setOrders((prevOrders) =>
+                    prevOrders.map((prevOrder) => {
+                        if (order.orderId === prevOrder.orderId) {
+                            return {
+                                ...prevOrder,
+                                logisticStatus: 'ControllFailed'
+                            };
+                        }
+                        return prevOrder;
+                    })
+                );
+            } else {
+                // Успешный сценарий
+                const controlTx = await currentConnection.contract.acceptOrder(orderId);
+                setTxBeingSent(controlTx.hash);
+                await controlTx.wait();
+                setOrders((prevOrders) =>
+                    prevOrders.map((prevOrder) => {
+                        if (order.orderId === prevOrder.orderId) {
+                            return {
+                                ...prevOrder,
+                                logisticStatus: 'Accepted',
+                                orderStatus: 'PaidOnSeller'
+                            };
+                        }
+                        return prevOrder;
+                    })
+                );
+
+                // const txToOwner: TxsToOwner = {
+                //     hash: controlTx.hash,
+                //     timestamp: Math.floor(Date.now() / 1000),
+                //     value: order.resourcePrice
+                // };
+                // const acceptedOrderTx = await currentConnection.contract.addAcceptedOrder(
+                //     txToOwner.timestamp,
+                //     txToOwner.hash,
+                //     txToOwner.value
+                // );
+                // await acceptedOrderTx.wait();
+                // setTxsBeingSentToOwner((txs) => [...txs, txToOwner]);
+                //TODO: должен отдавать событие перевода денег
+                // if(currentConnection.provider) {
+                //     currentConnection.provider.on("OrderAccepted", () => {
+                //         order.orderStatus = 'PaidOnSeller';
+                //         setAcceptanceOrderId(undefined);
+                //         console.log("Order accepted!");
+                //       });
+                // }
+            }
 
             setAcceptanceOrderId(undefined);
 
-            const txToOwner: TxsToOwner = {
-                hash: controlTx.hash,
-                timestamp: Math.floor(Date.now() / 1000),
-                value: order.resourcePrice
-            }
-            const acceptedOrderTx = await currentConnection.contract.addAcceptedOrder(txToOwner.timestamp, txToOwner.hash, txToOwner.value);
-            await acceptedOrderTx.wait();
-            setTxsBeingSentToOwner((txs) => [...txs, txToOwner]);
-            //TODO: должен отдавать событие перевода денег
-            // if(currentConnection.provider) {
-            //     currentConnection.provider.on("OrderAccepted", () => {
-            //         order.orderStatus = 'PaidOnSeller';
-            //         setAcceptanceOrderId(undefined);
-            //         console.log("Order accepted!");
-            //       });
-            // }
-
-           
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch(error: any) {
-            if(error?.reason) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            if (error?.reason) {
                 console.warn(error.reason);
                 setTransactionError(error.reason as string);
             } else {
@@ -138,7 +148,7 @@ export const AcceptanceOperatorForm: React.FC<ContolllerFormProps> = ({
                 <button
                     type='submit'
                     className='w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition'>
-                    Control passed
+                    Make decision
                 </button>
             </form>
         </div>

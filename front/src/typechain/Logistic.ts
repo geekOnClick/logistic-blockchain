@@ -26,15 +26,15 @@ import type {
 export declare namespace Logistic {
   export type AcceptedOrderStruct = {
     timestamp: BigNumberish;
-    hash: BigNumberish;
+    orderId: BigNumberish;
     value: BigNumberish;
   };
 
   export type AcceptedOrderStructOutput = [
     timestamp: bigint,
-    hash: bigint,
+    orderId: bigint,
     value: bigint
-  ] & { timestamp: bigint; hash: bigint; value: bigint };
+  ] & { timestamp: bigint; orderId: bigint; value: bigint };
 
   export type OrderStruct = {
     orderId: BigNumberish;
@@ -45,6 +45,10 @@ export declare namespace Logistic {
     orderedAt: BigNumberish;
     orderStatus: string;
     logisticStatus: string;
+    isArbitrating: boolean;
+    arbitratingBy: string;
+    numberOfVotes: BigNumberish;
+    arbitrationWinner: string;
   };
 
   export type OrderStructOutput = [
@@ -55,7 +59,11 @@ export declare namespace Logistic {
     resourcePrice: bigint,
     orderedAt: bigint,
     orderStatus: string,
-    logisticStatus: string
+    logisticStatus: string,
+    isArbitrating: boolean,
+    arbitratingBy: string,
+    numberOfVotes: bigint,
+    arbitrationWinner: string
   ] & {
     orderId: bigint;
     resourceId: bigint;
@@ -65,6 +73,10 @@ export declare namespace Logistic {
     orderedAt: bigint;
     orderStatus: string;
     logisticStatus: string;
+    isArbitrating: boolean;
+    arbitratingBy: string;
+    numberOfVotes: bigint;
+    arbitrationWinner: string;
   };
 }
 
@@ -74,13 +86,15 @@ export interface LogisticInterface extends Interface {
       | "acceptOrder"
       | "acceptanceOperator"
       | "acceptedOrders"
-      | "addAcceptedOrder"
       | "addOrder"
       | "allAcceptedOrders"
       | "allOrders"
+      | "allVoters"
       | "bayer"
+      | "beginArbitration"
       | "buy"
       | "controll"
+      | "controllFailed"
       | "controllSuccess"
       | "controller"
       | "currentOrderIndex"
@@ -93,14 +107,18 @@ export interface LogisticInterface extends Interface {
       | "orders"
       | "owner"
       | "supportsInterface"
-      | "withdrawToBayer"
+      | "vote"
+      | "voting"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "MoneyPaidToBayer"
+      | "MoneyPaidToSeller"
       | "OrderAccepted"
       | "OrderCancelled"
       | "OrderControll"
+      | "OrderControllFailed"
       | "OrderControllPassed"
       | "OrderCreated"
       | "OrderDelivered"
@@ -120,10 +138,6 @@ export interface LogisticInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "addAcceptedOrder",
-    values: [BigNumberish, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "addOrder",
     values: [BigNumberish, string, BigNumberish, BigNumberish]
   ): string;
@@ -132,10 +146,22 @@ export interface LogisticInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "allOrders", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "allVoters",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "bayer", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "beginArbitration",
+    values: [BigNumberish, string]
+  ): string;
   encodeFunctionData(functionFragment: "buy", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "controll",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "controllFailed",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -181,8 +207,12 @@ export interface LogisticInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "withdrawToBayer",
-    values: [BigNumberish]
+    functionFragment: "vote",
+    values: [BigNumberish, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "voting",
+    values: [BigNumberish, AddressLike]
   ): string;
 
   decodeFunctionResult(
@@ -197,19 +227,24 @@ export interface LogisticInterface extends Interface {
     functionFragment: "acceptedOrders",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "addAcceptedOrder",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "addOrder", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "allAcceptedOrders",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "allOrders", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "allVoters", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "bayer", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "beginArbitration",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "buy", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "controll", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "controllFailed",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "controllSuccess",
     data: BytesLike
@@ -243,10 +278,44 @@ export interface LogisticInterface extends Interface {
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "withdrawToBayer",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "vote", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "voting", data: BytesLike): Result;
+}
+
+export namespace MoneyPaidToBayerEvent {
+  export type InputTuple = [
+    orderId: BigNumberish,
+    timestamp: BigNumberish,
+    value: BigNumberish
+  ];
+  export type OutputTuple = [orderId: bigint, timestamp: bigint, value: bigint];
+  export interface OutputObject {
+    orderId: bigint;
+    timestamp: bigint;
+    value: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace MoneyPaidToSellerEvent {
+  export type InputTuple = [
+    orderId: BigNumberish,
+    timestamp: BigNumberish,
+    value: BigNumberish
+  ];
+  export type OutputTuple = [orderId: bigint, timestamp: bigint, value: bigint];
+  export interface OutputObject {
+    orderId: bigint;
+    timestamp: bigint;
+    value: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace OrderAcceptedEvent {
@@ -276,6 +345,19 @@ export namespace OrderCancelledEvent {
 }
 
 export namespace OrderControllEvent {
+  export type InputTuple = [orderId: BigNumberish, timestamp: BigNumberish];
+  export type OutputTuple = [orderId: bigint, timestamp: bigint];
+  export interface OutputObject {
+    orderId: bigint;
+    timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OrderControllFailedEvent {
   export type InputTuple = [orderId: BigNumberish, timestamp: BigNumberish];
   export type OutputTuple = [orderId: bigint, timestamp: bigint];
   export interface OutputObject {
@@ -408,17 +490,11 @@ export interface Logistic extends BaseContract {
     [
       [bigint, bigint, bigint] & {
         timestamp: bigint;
-        hash: bigint;
+        orderId: bigint;
         value: bigint;
       }
     ],
     "view"
-  >;
-
-  addAcceptedOrder: TypedContractMethod<
-    [_timestamp: BigNumberish, _hash: BigNumberish, _value: BigNumberish],
-    [void],
-    "nonpayable"
   >;
 
   addOrder: TypedContractMethod<
@@ -440,11 +516,25 @@ export interface Logistic extends BaseContract {
 
   allOrders: TypedContractMethod<[], [Logistic.OrderStructOutput[]], "view">;
 
+  allVoters: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
   bayer: TypedContractMethod<[], [string], "view">;
+
+  beginArbitration: TypedContractMethod<
+    [_orderId: BigNumberish, _arbitratingBy: string],
+    [void],
+    "nonpayable"
+  >;
 
   buy: TypedContractMethod<[_orderId: BigNumberish], [void], "payable">;
 
   controll: TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
+
+  controllFailed: TypedContractMethod<
+    [_orderId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   controllSuccess: TypedContractMethod<
     [_orderId: BigNumberish],
@@ -479,7 +569,20 @@ export interface Logistic extends BaseContract {
   orders: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, bigint, bigint, bigint, string, string] & {
+      [
+        bigint,
+        bigint,
+        string,
+        bigint,
+        bigint,
+        bigint,
+        string,
+        string,
+        boolean,
+        string,
+        bigint,
+        string
+      ] & {
         orderId: bigint;
         resourceId: bigint;
         resourceTitle: string;
@@ -488,6 +591,10 @@ export interface Logistic extends BaseContract {
         orderedAt: bigint;
         orderStatus: string;
         logisticStatus: string;
+        isArbitrating: boolean;
+        arbitratingBy: string;
+        numberOfVotes: bigint;
+        arbitrationWinner: string;
       }
     ],
     "view"
@@ -501,10 +608,16 @@ export interface Logistic extends BaseContract {
     "view"
   >;
 
-  withdrawToBayer: TypedContractMethod<
-    [_orderId: BigNumberish],
+  vote: TypedContractMethod<
+    [_orderId: BigNumberish, _isAccepted: boolean],
     [void],
     "nonpayable"
+  >;
+
+  voting: TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [boolean],
+    "view"
   >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -524,18 +637,11 @@ export interface Logistic extends BaseContract {
     [
       [bigint, bigint, bigint] & {
         timestamp: bigint;
-        hash: bigint;
+        orderId: bigint;
         value: bigint;
       }
     ],
     "view"
-  >;
-  getFunction(
-    nameOrSignature: "addAcceptedOrder"
-  ): TypedContractMethod<
-    [_timestamp: BigNumberish, _hash: BigNumberish, _value: BigNumberish],
-    [void],
-    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "addOrder"
@@ -556,13 +662,26 @@ export interface Logistic extends BaseContract {
     nameOrSignature: "allOrders"
   ): TypedContractMethod<[], [Logistic.OrderStructOutput[]], "view">;
   getFunction(
+    nameOrSignature: "allVoters"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  getFunction(
     nameOrSignature: "bayer"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "beginArbitration"
+  ): TypedContractMethod<
+    [_orderId: BigNumberish, _arbitratingBy: string],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "buy"
   ): TypedContractMethod<[_orderId: BigNumberish], [void], "payable">;
   getFunction(
     nameOrSignature: "controll"
+  ): TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "controllFailed"
   ): TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "controllSuccess"
@@ -596,7 +715,20 @@ export interface Logistic extends BaseContract {
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, bigint, bigint, bigint, string, string] & {
+      [
+        bigint,
+        bigint,
+        string,
+        bigint,
+        bigint,
+        bigint,
+        string,
+        string,
+        boolean,
+        string,
+        bigint,
+        string
+      ] & {
         orderId: bigint;
         resourceId: bigint;
         resourceTitle: string;
@@ -605,6 +737,10 @@ export interface Logistic extends BaseContract {
         orderedAt: bigint;
         orderStatus: string;
         logisticStatus: string;
+        isArbitrating: boolean;
+        arbitratingBy: string;
+        numberOfVotes: bigint;
+        arbitrationWinner: string;
       }
     ],
     "view"
@@ -616,9 +752,34 @@ export interface Logistic extends BaseContract {
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
-    nameOrSignature: "withdrawToBayer"
-  ): TypedContractMethod<[_orderId: BigNumberish], [void], "nonpayable">;
+    nameOrSignature: "vote"
+  ): TypedContractMethod<
+    [_orderId: BigNumberish, _isAccepted: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "voting"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [boolean],
+    "view"
+  >;
 
+  getEvent(
+    key: "MoneyPaidToBayer"
+  ): TypedContractEvent<
+    MoneyPaidToBayerEvent.InputTuple,
+    MoneyPaidToBayerEvent.OutputTuple,
+    MoneyPaidToBayerEvent.OutputObject
+  >;
+  getEvent(
+    key: "MoneyPaidToSeller"
+  ): TypedContractEvent<
+    MoneyPaidToSellerEvent.InputTuple,
+    MoneyPaidToSellerEvent.OutputTuple,
+    MoneyPaidToSellerEvent.OutputObject
+  >;
   getEvent(
     key: "OrderAccepted"
   ): TypedContractEvent<
@@ -639,6 +800,13 @@ export interface Logistic extends BaseContract {
     OrderControllEvent.InputTuple,
     OrderControllEvent.OutputTuple,
     OrderControllEvent.OutputObject
+  >;
+  getEvent(
+    key: "OrderControllFailed"
+  ): TypedContractEvent<
+    OrderControllFailedEvent.InputTuple,
+    OrderControllFailedEvent.OutputTuple,
+    OrderControllFailedEvent.OutputObject
   >;
   getEvent(
     key: "OrderControllPassed"
@@ -670,6 +838,28 @@ export interface Logistic extends BaseContract {
   >;
 
   filters: {
+    "MoneyPaidToBayer(uint256,uint256,uint256)": TypedContractEvent<
+      MoneyPaidToBayerEvent.InputTuple,
+      MoneyPaidToBayerEvent.OutputTuple,
+      MoneyPaidToBayerEvent.OutputObject
+    >;
+    MoneyPaidToBayer: TypedContractEvent<
+      MoneyPaidToBayerEvent.InputTuple,
+      MoneyPaidToBayerEvent.OutputTuple,
+      MoneyPaidToBayerEvent.OutputObject
+    >;
+
+    "MoneyPaidToSeller(uint256,uint256,uint256)": TypedContractEvent<
+      MoneyPaidToSellerEvent.InputTuple,
+      MoneyPaidToSellerEvent.OutputTuple,
+      MoneyPaidToSellerEvent.OutputObject
+    >;
+    MoneyPaidToSeller: TypedContractEvent<
+      MoneyPaidToSellerEvent.InputTuple,
+      MoneyPaidToSellerEvent.OutputTuple,
+      MoneyPaidToSellerEvent.OutputObject
+    >;
+
     "OrderAccepted(uint256,uint256)": TypedContractEvent<
       OrderAcceptedEvent.InputTuple,
       OrderAcceptedEvent.OutputTuple,
@@ -701,6 +891,17 @@ export interface Logistic extends BaseContract {
       OrderControllEvent.InputTuple,
       OrderControllEvent.OutputTuple,
       OrderControllEvent.OutputObject
+    >;
+
+    "OrderControllFailed(uint256,uint256)": TypedContractEvent<
+      OrderControllFailedEvent.InputTuple,
+      OrderControllFailedEvent.OutputTuple,
+      OrderControllFailedEvent.OutputObject
+    >;
+    OrderControllFailed: TypedContractEvent<
+      OrderControllFailedEvent.InputTuple,
+      OrderControllFailedEvent.OutputTuple,
+      OrderControllFailedEvent.OutputObject
     >;
 
     "OrderControllPassed(uint256,uint256)": TypedContractEvent<

@@ -3,59 +3,84 @@ import { BigNumberish } from 'ethers';
 import React from 'react';
 
 type ContolllerFormProps = {
-    currentConnection: CurrentConnectionProps,
-    setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>,
-    setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>,
-    setControlledOrderId: React.Dispatch<React.SetStateAction<BigNumberish  | undefined>>,
-    orderId: BigNumberish,
-    orders: OrderProps[],
-    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>,
+    currentConnection: CurrentConnectionProps;
+    setTxBeingSent: React.Dispatch<React.SetStateAction<string | undefined>>;
+    setTransactionError: React.Dispatch<React.SetStateAction<string | undefined>>;
+    setControlledOrderId: React.Dispatch<React.SetStateAction<BigNumberish | undefined>>;
+    orderId: BigNumberish;
+    orders: OrderProps[];
+    setOrders: React.Dispatch<React.SetStateAction<OrderProps[]>>;
 };
 
-export const ControllerForm:React.FC<ContolllerFormProps> = ({orderId, orders, setOrders, currentConnection, setControlledOrderId, setTransactionError, setTxBeingSent}) => {
-
-    const handleControlOrder = async(event: React.FormEvent<HTMLFormElement>) => {
+export const ControllerForm: React.FC<ContolllerFormProps> = ({
+    orderId,
+    orders,
+    setOrders,
+    currentConnection,
+    setControlledOrderId,
+    setTransactionError,
+    setTxBeingSent
+}) => {
+    const handleControlOrder = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        const formData = new FormData(event.currentTarget);
-
-        const documentsCorrect = formData.get("documentsCorrect");
-        const noViolations = formData.get("noViolations");
-
-        if(!currentConnection?.contract || !documentsCorrect || !noViolations) {
-           return;
-        }
-
-        const order = orders.find(order => order.orderId === orderId);
-        if(!order) {
-            setTransactionError('Not correct order ID')
-            return;
-        };
-
         try {
-            const controlTx = await currentConnection.contract.controllSuccess(orderId);
-            setTxBeingSent(controlTx.hash);
-            await controlTx.wait();
+            const formData = new FormData(event.currentTarget);
 
-            setOrders(prevOrders => prevOrders.map(prevOrder => {
-                if(order.orderId === prevOrder.orderId) {
-                    return {
-                        ...prevOrder,
-                        logisticStatus: 'TransitAfterControll',
-                    }
-                }
-                return prevOrder;
-            }))
+            const documentsCorrect = formData.get('documentsCorrect');
+            const noViolations = formData.get('noViolations');
+            const order = orders.find((order) => order.orderId === orderId);
+            if (!order) {
+                setTransactionError('Not correct order ID');
+                return;
+            }
+            if (!currentConnection?.contract) {
+                return;
+            }
+
+            if (!documentsCorrect || !noViolations) {
+                // Проверка отклонила ордер
+                const controlTx = await currentConnection.contract.controllFailed(orderId);
+                setTxBeingSent(controlTx.hash);
+                await controlTx.wait();
+
+                setOrders((prevOrders) =>
+                    prevOrders.map((prevOrder) => {
+                        if (order.orderId === prevOrder.orderId) {
+                            return {
+                                ...prevOrder,
+                                logisticStatus: 'ControllFailed'
+                            };
+                        }
+                        return prevOrder;
+                    })
+                );
+            } else {
+                // Успешный сценарий
+                const controlTx = await currentConnection.contract.controllSuccess(orderId);
+                setTxBeingSent(controlTx.hash);
+                await controlTx.wait();
+
+                setOrders((prevOrders) =>
+                    prevOrders.map((prevOrder) => {
+                        if (order.orderId === prevOrder.orderId) {
+                            return {
+                                ...prevOrder,
+                                logisticStatus: 'TransitAfterControll'
+                            };
+                        }
+                        return prevOrder;
+                    })
+                );
+            }
 
             setControlledOrderId(undefined);
-
-        } catch(error) {
+        } catch (error) {
             console.error(error);
             setTransactionError(error as string);
-        }finally {
+        } finally {
             setTxBeingSent(undefined);
         }
-    }
+    };
     return (
         <div className='max-w-lg p-4 bg-gray-900 shadow-lg rounded-lg'>
             <h2 className='text-xl font-bold text-white mb-4'>Controlling form</h2>
@@ -92,7 +117,7 @@ export const ControllerForm:React.FC<ContolllerFormProps> = ({orderId, orders, s
                 <button
                     type='submit'
                     className='w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition'>
-                    Control passed
+                    Make decision
                 </button>
             </form>
         </div>
