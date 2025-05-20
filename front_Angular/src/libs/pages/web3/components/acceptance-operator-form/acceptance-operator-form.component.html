@@ -1,0 +1,27 @@
+<p-card header="Accepting form" [style]="{width: '300px'}">
+    <form [formGroup]="acceptanceOperatorForm" novalidate class="delivery-operator-form"
+        (submit)="handleMakeDecision()">
+        <div class="select">
+            <p-floatlabel variant="in">
+                <p-select [options]="orderIds()" formControlName="orderId" />
+                <label for="orderId">Order ID:</label>
+            </p-floatlabel>
+        </div>
+        <div class="checkbox">
+            <p-checkbox formControlName="cargoNotDamaged" value="true" inputId="cargoNotDamaged" id="cargoNotDamaged"
+                binary />
+            <label for="cargoNotDamaged">The cargo is not damaged</label>
+        </div>
+        <div class="field">
+            <p-floatlabel variant="in">
+                <p-inputNumber inputId="resourceWeight" mode="decimal" formControlName="resourceWeight"
+                    id="resourceWeight" />
+                <label for="resourceWeight">Resource weight on acceptance:</label>
+            </p-floatlabel>
+        </div>
+        <p-button type="submit">Make decision</p-button>
+    </form>
+</p-card>
+
+<error-message />
+<warn-message />

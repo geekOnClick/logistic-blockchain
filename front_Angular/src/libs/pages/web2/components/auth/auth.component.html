@@ -1,0 +1,30 @@
+<div class="auth-container">
+    <p-card header="Authentification" [style]="{width: '300px'}">
+        <form [formGroup]="authForm" novalidate class="auth-form" (submit)="handleAuth()">
+            <div class="field" *ngIf="isRegister">
+                <p-floatlabel variant="in">
+                    <input pInputText formControlName="name" id="name" />
+                    <label for="name">User name:</label>
+                </p-floatlabel>
+            </div>
+            <div class="field">
+                <p-floatlabel variant="in">
+                    <input pInputText formControlName="email" id="email" />
+                    <label for="email">Email:</label>
+                </p-floatlabel>
+            </div>
+            <div class="field">
+                <p-floatlabel variant="in">
+                    <input pInputText formControlName="password" id="password" />
+                    <label for="password">Password:</label>
+                </p-floatlabel>
+            </div>
+            <div class="switch">
+                <p-toggleswitch formControlName="isRegister" ariaLabelledBy="switch" />
+                <span id="switch">Register Me</span>
+            </div>
+
+            <p-button type="submit">{{btnText}}</p-button>
+        </form>
+    </p-card>
+</div>

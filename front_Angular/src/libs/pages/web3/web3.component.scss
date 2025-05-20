@@ -1,0 +1,28 @@
+.main {
+    margin-top: 50px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    grid-auto-rows: minmax(100px, auto);
+
+    grid-template-areas:
+        ". balance"
+        ". balance"
+        "orders orders";
+
+    .block {
+        align-self: center;
+        justify-self: center;
+    }
+}
+
+current-balance {
+    grid-area: balance;
+    justify-self: center;
+}
+
+.orders-block {
+    grid-area: orders;
+    width: 1100px;
+    justify-self: center;
+}

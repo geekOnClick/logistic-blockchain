@@ -1,0 +1,24 @@
+<p-card header="Controlling form" [style]="{width: '400px'}">
+    <form [formGroup]="controllerForm" novalidate class="controller-form" (submit)="handleMakeDecision()">
+        <div>
+            <p-floatlabel class="select" variant="in">
+                <p-select [options]="orderIds()" formControlName="orderId" />
+                <label for="orderId">Order ID:</label>
+            </p-floatlabel>
+        </div>
+        <div class="checkbox">
+            <p-checkbox formControlName="isDocumentsCorrect" value="true" inputId="isDocumentsCorrect"
+                id="isDocumentsCorrect" binary />
+            <label for="isDocumentsCorrect">Documents correct</label>
+        </div>
+        <div class="checkbox">
+            <p-checkbox formControlName="isNoViolations" value="true" inputId="isNoViolations" id="isNoViolations"
+                binary />
+            <label for="isNoViolations">No violations of cargo transportation</label>
+        </div>
+        <p-button type="submit" [disabled]="!controllerForm.valid">Make decision</p-button>
+    </form>
+</p-card>
+
+<error-message />
+<warn-message />

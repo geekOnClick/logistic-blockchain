@@ -1,0 +1,21 @@
+<p-card header="Pay an Order" [style]="{width: '400px'}">
+    <form [formGroup]="bayerForm" novalidate class="delivery-operator-form" (submit)="handlePayOrder()">
+        <div class="select">
+            <p-floatlabel variant="in">
+                <p-select [options]="orderIds()" formControlName="orderId" />
+                <label for="orderId">Order ID:</label>
+            </p-floatlabel>
+        </div>
+        <div class="field">
+            <p-floatlabel variant="in">
+                <p-inputNumber inputId="resourcePrice" mode="currency" currency="ETH" locale="de-DE"
+                    formControlName="resourcePrice" id="resourcePrice" />
+                <label for="resourcePrice">Amount:</label>
+            </p-floatlabel>
+        </div>
+        <p-button type="submit" [disabled]="!this.bayerForm.valid">PAY</p-button>
+    </form>
+</p-card>
+
+<error-message />
+<warn-message />

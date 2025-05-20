@@ -1,0 +1,34 @@
+<connect-wallet *ngIf="!web3Service.role()" (connectWalletEmited)="connectWallet()"></connect-wallet>
+
+@if(web3Service.role()) {
+<div class="main">
+    <current-balance></current-balance>
+    <delivery-operator-form class="block" *ngIf="web3Service.role() === Role.deliveryOperator"></delivery-operator-form>
+    <acceptance-operator-form class="block"
+        *ngIf="web3Service.role() === Role.acceptanceOperator"></acceptance-operator-form>
+    <bayer-form class="block" *ngIf="web3Service.role() === Role.Bayer"></bayer-form>
+    <controller-form class="block" *ngIf="web3Service.role() === Role.controller"></controller-form>
+    <seller-form class="block" *ngIf="web3Service.role() === Role.Seller"></seller-form>
+
+    <apply-arbitration-form *ngIf="web3Service.role() === Role.Bayer || web3Service.role() === Role.Seller"
+        class="block"></apply-arbitration-form>
+
+    <div class="orders-block">
+        <p>Contract Balance: 90 ETH</p>
+
+        <p-accordion>
+            <p-accordion-panel value="0">
+                <p-accordion-header>Orders:</p-accordion-header>
+                <p-accordion-content>
+                    <order-table [currentConnection]="web3Service.currentConnection()"
+                        [role]="web3Service.role()"></order-table>
+                </p-accordion-content>
+            </p-accordion-panel>
+        </p-accordion>
+    </div>
+</div>
+
+}
+
+<error-message />
+<warn-message />

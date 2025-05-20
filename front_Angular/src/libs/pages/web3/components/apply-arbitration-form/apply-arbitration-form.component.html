@@ -1,0 +1,14 @@
+<p-card header="Apply for Arbitration" [style]="{width: '400px'}">
+    <form [formGroup]="applyArbitrationForm" novalidate class="apply-arbitration-form" (submit)="handleRefund()">
+        <div class="select">
+            <p-floatlabel variant="in">
+                <p-select [options]="orderIds()" formControlName="orderId" />
+                <label for="orderId">Order ID:</label>
+            </p-floatlabel>
+        </div>
+        <p-button type="submit" [disabled]="!applyArbitrationForm.valid">REFUND</p-button>
+    </form>
+</p-card>
+
+<error-message />
+<warn-message />

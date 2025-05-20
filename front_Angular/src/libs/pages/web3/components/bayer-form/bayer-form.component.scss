@@ -1,0 +1,26 @@
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox {
+    display: flex;
+    column-gap: 5px;
+}
+
+.select {
+    p-select {
+        width: 100%;
+    }
+}
+
+.delivery-operator-form {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+
+    input,
+    p-inputNumber {
+        width: 100%;
+    }
+}

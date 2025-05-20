@@ -1,0 +1,20 @@
+.select {
+    p-select {
+        width: 100%;
+    }
+}
+
+.checkbox {
+    display: flex;
+    column-gap: 5px;
+}
+
+.apply-arbitration-form {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+
+    input {
+        width: 100%;
+    }
+}

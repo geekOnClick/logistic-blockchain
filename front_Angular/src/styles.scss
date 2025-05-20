@@ -1,0 +1,10 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    -ms-overflow-style: none;
+
+    height: 100vh;
+}

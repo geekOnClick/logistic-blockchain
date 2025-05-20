@@ -1,0 +1,16 @@
+.select {
+    p-select {
+        width: 100%;
+    }
+}
+
+.checkbox {
+    display: flex;
+    column-gap: 5px;
+}
+
+.controller-form {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}

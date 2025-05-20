@@ -1,0 +1,41 @@
+@if(orders()?.length) {
+<p-table [value]="orders() ?? []" [tableStyle]="{ 'min-width': '50rem' }" selectionMode="single"
+  [(selection)]="selectedOrder">
+  <ng-template #header>
+    <tr>
+      <th>Order ID</th>
+      <th>Resource ID</th>
+      <th>Resource Title</th>
+      <th>Resource Weight</th>
+      <th>Resource Price</th>
+      <th>Ordered At</th>
+      <th>Order Status</th>
+      <th>Logistic Status</th>
+      <th *ngIf="role() === 'controller' || role() === 'acceptanceOperator'">Actions</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-order>
+    <tr [pSelectableRow]="order">
+      <td>{{order.orderId}}</td>
+      <td>{{order.resourceId}}</td>
+      <td>{{order.resourceTitle}}</td>
+      <td>{{order.resourceWeight}}</td>
+      <td>{{order.resourcePrice}}</td>
+      <td>{{order.orderedAt | toDate }}</td>
+      <td>{{order.orderStatus}}</td>
+      <td>{{order.logisticStatus}}</td>
+      <td *ngIf="role() === 'controller' || role() === 'acceptanceOperator'">
+        <p-button [label]="role() === 'controller' ? 'Take on controll' : 'Goods delivered'"
+          [disabled]="isBtnDisabled(order)" (onClick)="handleOrder(order)"></p-button>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+} @else {
+<p>You have no orders yet :(</p>
+}
+
+
+<warn-message />
+<error-message />
