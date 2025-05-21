@@ -1,0 +1,15 @@
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox {
+    display: flex;
+    column-gap: 5px;
+}
+
+.delivery-operator-form {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}

@@ -1,0 +1,23 @@
+.auth-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  justify-content: space-around;
+  align-items: center;
+
+  padding: 10px;
+  border: 2px solid var(--p-primary-color);
+  border-radius: 10px;
+
+  width: 300px;
+  height: 200px;
+
+
+}

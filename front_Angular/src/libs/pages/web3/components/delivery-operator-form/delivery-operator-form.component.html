@@ -1,0 +1,31 @@
+<p-card header="Accepting form" [style]="{width: '300px'}">
+    <form [formGroup]="deliveryOperatorForm" novalidate class="delivery-operator-form">
+        <div class="field">
+            <p-floatlabel variant="in">
+                <label for="resourceId">Resource ID:</label>
+                <input pInputText type="text" formControlName="resourceId" id="resourceId" />
+            </p-floatlabel>
+        </div>
+        <div class="field">
+            <p-floatlabel variant="in">
+                <label for="resourceTitle">Resource Title:</label>
+                <input pInputText type="text" formControlName="resourceTitle" id="resourceTitle" />
+            </p-floatlabel>
+        </div>
+        <div class="field">
+            <p-floatlabel variant="in">
+                <p-inputNumber inputId="resourceWeight" mode="decimal" formControlName="resourceWeight"
+                    id="resourceWeight" />
+                <label for="resourceWeight">Resource Weight:</label>
+            </p-floatlabel>
+        </div>
+        <div class="field">
+            <p-floatlabel variant="in">
+                <p-inputNumber inputId="resourcePrice" mode="decimal" formControlName="resourcePrice"
+                    id="resourcePrice" />
+                <label for="resourcePrice">Resource Price:</label>
+            </p-floatlabel>
+        </div>
+        <p-button type="submit" [disabled]="!deliveryOperatorForm.valid" (click)="handleAddOrder()">ADD ORDER</p-button>
+    </form>
+</p-card>

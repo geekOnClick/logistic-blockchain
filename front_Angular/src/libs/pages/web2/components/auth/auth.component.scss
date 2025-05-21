@@ -1,0 +1,23 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 200px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    row-gap: 30px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.switch {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+}

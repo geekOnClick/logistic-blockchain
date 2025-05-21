@@ -1,0 +1,22 @@
+<p-card header="Current Balance" [style]="{width: '500px'}">
+  <form [formGroup]="userForm$()" novalidate class="current-balance-form">
+    <div class="field">
+      <p-floatlabel variant="in">
+        <label for="current-balance-address" class="block">Your address:</label>
+        <input pInputText type="text" formControlName="address" id="current-balance-address" />
+      </p-floatlabel>
+    </div>
+    <div class="field">
+      <p-floatlabel variant="in">
+        <label for="balance" class="block">Your Balance:</label>
+        <input pInputText type="text" formControlName="balance" id="balance" />
+      </p-floatlabel>
+    </div>
+    <div class="field">
+      <p-floatlabel variant="in">
+        <label for="role" class="block">Your Role:</label>
+        <input pInputText type="text" formControlName="role" id="role" />
+      </p-floatlabel>
+    </div>
+  </form>
+</p-card>
